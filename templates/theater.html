@@ -1,0 +1,219 @@
+<html>
+<head>
+<title>Theater</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body style="margin:0;">
+<div class="content">
+	<video controls="" autoplay="true" style="width: 80%;background: #000;">
+		<source type="video/mp4" src="https://storage16.fmovcdn.com/storage16/50b651eb05767599bc028e0561ad893a/EP.1.v0.1639847706.360p.mp4">
+	</video>
+
+	<div class="chat-container">
+		<div class="chat-settings">
+			<p class="couchpotato-title"><strong>CouchPotato</strong></p>
+			<div class="chat-settings-right">
+				<button class="btn invite-btn">Invite</button>
+				<div class="settings-profile-image"></div>	
+			</div>
+		</div>
+		<div class="chat-box">
+			<!-- <div class="chat-message-container">
+				<div class="chat-profile-image"></div>
+				<div class="message-contents">
+					<p class="message-user"><strong>Jane Doe</strong></p>
+					<p class="chat-message">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+				</div>
+			</div>
+
+			<div class="chat-message-container">
+				<div class="chat-profile-image"></div>
+				<div class="message-contents">
+					<p class="message-user"><strong>John Doe</strong></p>
+					<p class="chat-message">Nostrum aut nemo qui quo suscipit culpa tenetur itaque earum nisi dolore.</p>
+				</div>
+			</div>
+
+			<div class="chat-message-container">
+				<div class="chat-profile-image"></div>
+				<div class="message-contents">
+					<p class="message-user"><strong>Jane Doe</strong></p>
+					<p class="chat-message">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+				</div>
+			</div>
+
+			<div class="chat-message-container">
+				<div class="chat-profile-image"></div>
+				<div class="message-contents">
+					<p class="message-user"><strong>John Doe</strong></p>
+					<p class="chat-message">Nostrum aut nemo qui quo suscipit culpa tenetur itaque earum nisi dolore.</p>
+				</div>
+			</div>
+
+			<div class="chat-message-container">
+				<div class="chat-profile-image"></div>
+				<div class="message-contents">
+					<p class="message-user"><strong>Jane Doe</strong></p>
+					<p class="chat-message">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+				</div>
+			</div>
+
+			<div class="chat-message-container">
+				<div class="chat-profile-image"></div>
+				<div class="message-contents">
+					<p class="message-user"><strong>John Doe</strong></p>
+					<p class="chat-message">Nostrum aut nemo qui quo suscipit culpa tenetur itaque earum nisi dolore.</p>
+				</div>
+			</div>
+
+			<div class="chat-message-container">
+				<div class="chat-profile-image"></div>
+				<div class="message-contents">
+					<p class="message-user"><strong>Jane Doe</strong></p>
+					<p class="chat-message">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+				</div>
+			</div>
+
+			<div class="chat-message-container">
+				<div class="chat-profile-image"></div>
+				<div class="message-contents">
+					<p class="message-user"><strong>John Doe</strong></p>
+					<p class="chat-message">Nostrum aut nemo qui quo suscipit culpa tenetur itaque earum nisi dolore.</p>
+				</div>
+			</div>
+
+			<div class="chat-message-container">
+				<div class="chat-profile-image"></div>
+				<div class="message-contents">
+					<p class="message-user"><strong>Jane Doe</strong></p>
+					<p class="chat-message">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+				</div>
+			</div>
+
+			<div class="chat-message-container">
+				<div class="chat-profile-image"></div>
+				<div class="message-contents">
+					<p class="message-user"><strong>John Doe</strong></p>
+					<p class="chat-message">Nostrum aut nemo qui quo suscipit culpa tenetur itaque earum nisi dolore.</p>
+				</div>
+			</div> -->
+		</div>
+
+		<div class="input-container">
+			<span id="chat-input" role="textbox" contenteditable></span>
+		</div>
+	</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+<script type="text/javascript" charset="utf-8">
+	const _ = (el) => { return document.querySelector(`#${el}`) ? document.querySelector(`#${el}`) : document.querySelector(`.${el}`) }
+	const _all = (el) => { return document.querySelectorAll(`.${el}`) }
+
+	const appendMessageToContainer = (username, message) => {
+		let chat_message_container = document.createElement('div')
+		let chat_profile_image = document.createElement('div')
+		let message_contents = document.createElement('div')
+		let message_user = document.createElement('p')
+		let chat_message = document.createElement('p')
+
+		// setting classes
+		chat_message_container.classList.add('chat-message-container')
+		chat_profile_image.classList.add('chat-profile-image')
+		message_contents.classList.add('message-contents')
+		message_user.classList.add('message-user')
+		chat_message.classList.add('chat-message')
+
+		// setting extra content
+		message_user.style.fontWeight = 'bold'
+		message_user.textContent = username
+		chat_message.textContent = message
+
+		// adding elements to divs
+		message_contents.appendChild(message_user)
+		message_contents.appendChild(chat_message)
+		chat_message_container.appendChild(chat_profile_image)
+		chat_message_container.appendChild(message_contents)
+		_('chat-box').prepend(chat_message_container)
+	}
+
+	// url parameter setup
+	var url = new URL(location.href)
+	var search_params = new URLSearchParams(url.search)
+
+	///////////////////////////////////////////////////
+	var content = null
+	var complete = null
+
+	var video = document.querySelector('video')
+	video.addEventListener('complete', (e) => {
+		complete = e.target
+		console.log('complete set')
+	})
+
+	video.addEventListener('canplay', (e) => {
+		content = e.target
+		console.log('canplay set')
+	})
+	// video.addEventListener('progress', (e) => {
+	//   progress = e
+	// })
+	///////////////////////////////////////////////////
+
+	var socket = io.connect('https://moviedate.ngrok.io')
+	socket.on('connect', () => {
+		console.log('connect listener found')
+			socket.emit('join_room', {
+			username: search_params.get('username'),
+			room: search_params.get('room')
+		})
+		console.log('emit join_room sent')
+	})
+
+	socket.on('join_room_announcement', (data) => {
+		console.log(data)
+	})
+
+	socket.on('video_seeked_announcement', (data) => {
+		console.log(data)
+		video.currentTime = data.newTime
+		video.play()
+	})
+
+	socket.on('new_message_announcement', (data) => {
+		console.log(data)
+		appendMessageToContainer(data['username'], data['message'])
+	})
+
+
+	last_seeked_time = -1
+	video.addEventListener('seeked', (e)=> {
+		console.log('seeked init')
+		if ((e.target.currentTime > last_seeked_time+0.9) || (e.target.currentTime < last_seeked_time - 0.1)) {
+			var newTime = e.target.currentTime
+			socket.emit('video_seeked', {
+				username: search_params.get('username'),
+				room: search_params.get('room'),
+				newTime: newTime
+			})
+			console.log('seeked sent')
+			last_seeked_time = newTime
+		}
+	})
+
+	// message handling
+	_('chat-input').oninput = ((e) => {
+		if ((e.inputType == 'insertParagraph') && (e.target.textContent.trim() !== '')) {
+			let message = e.target.textContent
+			// clear e.target.textContent
+			e.target.textContent = ''
+			// emit missage
+			socket.emit('message', {
+				username: search_params.get('username'),
+				room: search_params.get('room'),
+				message
+			})
+		}
+	})
+</script>
+</body>
+</html>

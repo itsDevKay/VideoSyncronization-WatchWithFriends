@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>HTML 5 Boilerplate</title>
+  </head>
+  <body>
+    <div id="container" style="">
+        <!-- <canvas id="canvasOutput"></canvas> -->
+        <video autoplay="true" id="videoElement"></video>
+    </div>
+    
+    <div class = 'video'>
+        <img id="guest-image" style="display:none;" height="375" width="500">
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.js" integrity="sha512-9mpsATI0KClwt+xVZfbcf2lJ8IFBAwsubJ6mI3rtULwyM3fBmQFzj0It4tGqxLOGQwGfJdk/G+fANnxfq9/cew==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+        function capture(video, scaleFactor) {
+            if(scaleFactor == null){
+                scaleFactor = 1;
+            }
+            var w = video.videoWidth * scaleFactor;
+            var h = video.videoHeight * scaleFactor;
+            var canvas = document.createElement('canvas');
+                canvas.width  = w;
+                canvas.height = h;
+            var ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, w, h);
+            return canvas;
+        } 
+
+        function uuidv4() {
+            return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
+                (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)
+            );
+        }
+
+        let uid = uuidv4()
+
+        var socket = io('http://localhost:5555');
+        socket.on('connect', function() {
+            // socket.join("some room");
+            console.log("Connection has been succesfully established with socket.", socket.connected)
+        });
+
+        socket.on('disconnect', () => {
+            socket.emit('left', uid)
+        });
+
+        const video = document.querySelector("#videoElement");
+        video.width = 500; 
+        video.height = 375;
+        if (navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function (stream) {
+                video.srcObject = stream;
+                video.play();
+            })
+            .catch(function (err0r) {
+                console.log(err0r)
+                console.log("Something went wrong!");
+            });
+        }
+        const FPS = 240;
+        setInterval(() => {
+            var type = "image/jpg"
+            var video_element = document.getElementById("videoElement")
+            var frame = capture(video_element, 1)
+            var data = frame.toDataURL(type);
+            data = data.replace('data:' + type + ';base64,', '');
+            // console.log(data);
+            socket.emit('image', {
+                data_image: data,
+                uid: uid
+            });
+            console.log('sent image');
+        }, 10000/FPS);
+    
+    
+        let visrc = '';
+        socket.on('response_back', function(data) {
+            if (data.uid != uid) {
+                visrc = data.image;
+                document.querySelector('#guest-image').src = visrc;
+                document.querySelector('#guest-image').style.display = 'block'
+            }
+        });
+
+        socket.on('clear_guest_video', () => {
+            visrc = '';
+            document.querySelector('#guest-image').src = visrc;
+            document.querySelector('#guest-image').style.display = 'none';
+        })
+    </script>
+  </body>
+</html>

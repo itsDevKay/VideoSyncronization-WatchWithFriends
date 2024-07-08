@@ -5,15 +5,15 @@
 </head>
 <body style="margin:0;">
 <div class="content">
-	<video controls="" autoplay="true" style="width: 80%;background: #000;">
-		<source type="video/mp4" src="https://storage16.fmovcdn.com/storage16/50b651eb05767599bc028e0561ad893a/EP.1.v0.1639847706.360p.mp4">
+	<video controls="" autoplay="true" preload="auto" style="width: 80%;background: #000;">
+		<source type="video/webm" src="">
 	</video>
 
 	<div class="chat-container">
 		<div class="chat-settings">
 			<p class="couchpotato-title"><strong>CouchPotato</strong></p>
 			<div class="chat-settings-right">
-				<button class="btn invite-btn">Invite</button>
+				<button class="btn invite-btn">Send</button>
 				<div class="settings-profile-image"></div>	
 			</div>
 		</div>
@@ -109,7 +109,8 @@
 	const _ = (el) => { return document.querySelector(`#${el}`) ? document.querySelector(`#${el}`) : document.querySelector(`.${el}`) }
 	const _all = (el) => { return document.querySelectorAll(`.${el}`) }
 
-	const appendMessageToContainer = (username, message) => {
+	const appendMessageToContainer = (username, message, userColor) => {
+        console.log('init appendMessageToContainer');
 		let chat_message_container = document.createElement('div')
 		let chat_profile_image = document.createElement('div')
 		let message_contents = document.createElement('div')
@@ -119,6 +120,8 @@
 		// setting classes
 		chat_message_container.classList.add('chat-message-container')
 		chat_profile_image.classList.add('chat-profile-image')
+        chat_profile_image.style.backgroundColor = userColor;
+
 		message_contents.classList.add('message-contents')
 		message_user.classList.add('message-user')
 		chat_message.classList.add('chat-message')
@@ -150,7 +153,7 @@
 		console.log('complete set')
 	})
 
-	video.addEventListener('canplay', (e) => {
+	video.addEventListener('loadeddata', (e) => {
 		content = e.target
 		console.log('canplay set')
 	})
@@ -159,7 +162,11 @@
 	// })
 	///////////////////////////////////////////////////
 
-	var socket = io.connect('https://moviedate.ngrok.io')
+    let username = search_params.get('username');
+    let hostUserColor = '#'+(Math.random() * 0xFFFFFF << 0).toString(16).padStart(6, '0');
+    let guestUserColor = '#'+(Math.random() * 0xFFFFFF << 0).toString(16).padStart(6, '0');
+
+	var socket = io.connect('https://major-news-rest.loca.lt')
 	socket.on('connect', () => {
 		console.log('connect listener found')
 			socket.emit('join_room', {
@@ -171,6 +178,7 @@
 
 	socket.on('join_room_announcement', (data) => {
 		console.log(data)
+        appendMessageToContainer(data['username'], "has joined the watch party.", data['username'] == username ? hostUserColor : guestUserColor)
 	})
 
 	socket.on('video_seeked_announcement', (data) => {
@@ -179,16 +187,46 @@
 		video.play()
 	})
 
+    socket.on('video_played_announcement', (data) => {
+		video.play()
+	})
+
+    socket.on('video_paused_announcement', (data) => {
+		video.pause()
+	})
+
 	socket.on('new_message_announcement', (data) => {
 		console.log(data)
-		appendMessageToContainer(data['username'], data['message'])
+		appendMessageToContainer(data['username'], data['message'], data['username'] == username ? hostUserColor : guestUserColor)
 	})
+
+    socket.on('send_alert', (data) => {
+        if (data['username'] != username) {
+            let msg = data['message'].split('/alert ')[1];
+            alert(msg);
+        }
+    })
+
+    document.querySelector('.invite-btn').onclick = ((e) => {
+        console.log('send message');
+        let message = document.querySelector('#chat-input');
+        // appendMessageToContainer(username, message.textContent);
+        socket.emit('message', {
+            username: search_params.get('username'),
+            room: search_params.get('room'),
+            message: message.textContent
+        });
+        message.textContent = '';
+    })
 
 
 	last_seeked_time = -1
 	video.addEventListener('seeked', (e)=> {
+        console.log(e.target.currentTime)
 		console.log('seeked init')
+        console.log(`Seek to: ${e.target.currentTime}`);
 		if ((e.target.currentTime > last_seeked_time+0.9) || (e.target.currentTime < last_seeked_time - 0.1)) {
+            console.log(`Seek to: ${e.target.currentTime}`);
 			var newTime = e.target.currentTime
 			socket.emit('video_seeked', {
 				username: search_params.get('username'),
@@ -199,6 +237,42 @@
 			last_seeked_time = newTime
 		}
 	})
+
+    video.addEventListener('seeking', (e)=> {
+        console.log(e.target.currentTime)
+        console.log('seeking');
+		// console.log('seeked init')
+        // console.log(`Seek to: ${e.target.currentTime}`);
+		// if ((e.target.currentTime > last_seeked_time+0.9) || (e.target.currentTime < last_seeked_time - 0.1)) {
+        //     console.log(`Seek to: ${e.target.currentTime}`);
+		// 	var newTime = e.target.currentTime
+		// 	socket.emit('video_seeked', {
+		// 		username: search_params.get('username'),
+		// 		room: search_params.get('room'),
+		// 		newTime: newTime
+		// 	})
+		// 	console.log('seeked sent')
+		// 	last_seeked_time = newTime
+		// }
+	})
+
+    // video.addEventListener('pause', (e)=> {
+	// 	console.log('pause init')
+	// 	socket.emit('video_paused', {
+    //         username: search_params.get('username'),
+    //         room: search_params.get('room')
+    //     })
+    //     console.log('pause sent')
+	// })
+
+    // video.addEventListener('play', (e)=> {
+	// 	console.log('play init')
+	// 	socket.emit('video_played', {
+    //         username: search_params.get('username'),
+    //         room: search_params.get('room')
+    //     })
+    //     console.log('play sent')
+	// })
 
 	// message handling
 	_('chat-input').oninput = ((e) => {

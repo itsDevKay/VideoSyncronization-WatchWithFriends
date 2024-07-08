@@ -30,15 +30,37 @@ def handle_join_room(data):
 
 @socketio.on('video_seeked')
 def handle_video_seek(data):
+	app.logger.info(data)
 	app.logger.info(f"{data['username']} has seeked the video to {data['newTime']} in room {data['room']}")
 	socketio.emit('video_seeked_announcement', data, room=data['room'])
 	app.logger.info('sent video_seeked_announcement')
+	
+@socketio.on('video_paused')
+def handle_video_pause(data):
+	app.logger.info(f"{data['username']} has paused the video in room {data['room']}")
+	socketio.emit('video_paused_announcement', data, room=data['room'])
+	app.logger.info('sent video_paused_announcement')
+	
+@socketio.on('video_played')
+def handle_video_play(data):
+	app.logger.info(f"{data['username']} has played the video in room {data['room']}")
+	socketio.emit('video_played_announcement', data, room=data['room'])
+	app.logger.info('sent video_played_announcement')
 
 @socketio.on('message')
 def handle_new_message(data):
-	app.logger.info(f"{data['username']} has send a new message ro room {data['room']}. Message: {data['message']}")
-	socketio.emit('new_message_announcement', data, room=data['room'])
-	app.logger.info('sent new_message_announcement')
+    if data['message'] not in ['/pause', '/play'] and '/alert' not in data['message']:
+        app.logger.info(f"{data['username']} has send a new message room {data['room']}. Message: {data['message']}")
+        socketio.emit('new_message_announcement', data, room=data['room'])
+        app.logger.info('sent new_message_announcement')
+    else:
+        app.logger.info(f"{data['username']} has enter a {data['message']} command")
+        if data['message'] == '/pause':
+            socketio.emit('video_paused_announcement', data, room=data['room']) 
+        elif data['message'] == '/play':
+            socketio.emit('video_played_announcement', data, room=data['room'])
+        elif '/alert' in data['message']:
+            socketio.emit('send_alert', data, room=data['room'])
 
 if __name__ == '__main__':
-	socketio.run(app, debug=True)
+	socketio.run(app, host="0.0.0.0", debug=True)

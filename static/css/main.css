@@ -60,7 +60,7 @@
 	padding: 20px;
 	word-break: break-word;
 	position: absolute;
-	bottom: 0px;
+	top: 60px;
 }
 #chat-input[contenteditable]:empty::before {
 	content: "Type a message...";
